@@ -116,5 +116,3 @@ while continue_reading:
                 r = requests.post(backend_address+'/transaction', headers=default_header, json=payload)
                 json_data = json.loads(r.text)
                 print(json_data["result"][0]["username"] + ": " + str(json_data["result"][0]["saldo"]))
-
-            
