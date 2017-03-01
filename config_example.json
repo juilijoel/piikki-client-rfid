@@ -1,0 +1,5 @@
+{
+    "backend_address":"http://yourhost.com/api/restricted",
+    "default_header":{"Authorization": "YourHashedToken"},
+    "default_amount":-1
+}

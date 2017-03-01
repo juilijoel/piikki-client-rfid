@@ -1,15 +1,14 @@
 import RPi.GPIO as GPIO
 import MFRC522
 import signal
-import sqlite3
 import sys
-import time
 import requests
 import getpass
 import os
 import json
 from gadgets import gadgets
 from os.path import expanduser
+from database import database
 
 # Fetch settings from json file
 with open('config.json') as json_config_file:
@@ -31,14 +30,8 @@ g = gadgets(29, 32, 36)
 continue_reading = True
 conn = None
 
-#Connect to database
-try:
-    conn = sqlite3.connect(sqlite_path)
-    c = conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS users (carduid TEXT, username TEXT)')
-except sqlite3.Error as e:
-    print("Error %s:" % e.args[0])
-    sys.exit(1)
+#initialize database
+db = database(sqlite_path)
 
 # Capture SIGINT for cleanup when the script is aborted
 def end_read(signal,frame):
@@ -75,11 +68,10 @@ while continue_reading:
             # Combine UID
             uid_combined = str(uid[0])+str(uid[1])+str(uid[2])+str(uid[3])
 
-            # Check if card is found in the database
-            c.execute('SELECT * FROM users WHERE carduid=?', [uid_combined])
-            card = c.fetchone()
+            # Check if user is found in the database
+            user = db.get_user([uid_combined])
 
-            if card == None:
+            if user == None:
                 # No card found from database
                 g.flash(RED)
                 print("Card not recognized. Setting up new card!")
@@ -103,8 +95,7 @@ while continue_reading:
                             print("User found from group! Adding card to database!")
 
                             #Save user to database
-                            c.execute('INSERT INTO users VALUES (?,?)', (uid_combined, username))
-                            conn.commit()
+                            db.save_user(username, uid_combined)
 
                 except:
                     print("Error, user not added to database!")
@@ -112,7 +103,7 @@ while continue_reading:
             else:
                 #Card found from database, do transaction
                 g.flash(GREEN)
-                payload = {"username":card[1],"amount":default_amount}
+                payload = {"username":user[1],"amount":default_amount}
                 r = requests.post(backend_address+'/transaction', headers=default_header, json=payload)
                 json_data = json.loads(r.text)
                 print(json_data["result"][0]["username"] + ": " + str(json_data["result"][0]["saldo"]))
