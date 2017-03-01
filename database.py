@@ -20,3 +20,6 @@ class database:
         #Save user to database
         self.c.execute('INSERT INTO users VALUES (?,?)', (uid, username))
         self.conn.commit()
+
+    def close(self):
+        self.conn.close()

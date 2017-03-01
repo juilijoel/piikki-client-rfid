@@ -2,13 +2,13 @@ import RPi.GPIO as GPIO
 import MFRC522
 import signal
 import sys
-import requests
 import getpass
 import os
 import json
 from gadgets import gadgets
 from os.path import expanduser
 from database import database
+from backend_access import backend_access
 
 # Fetch settings from json file
 with open('config.json') as json_config_file:
@@ -28,17 +28,19 @@ GPIO.setmode(GPIO.BOARD)
 g = gadgets(29, 32, 36)
 
 continue_reading = True
-conn = None
 
 #initialize database
 db = database(sqlite_path)
+
+#initialize backend access
+ba = backend_access(backend_address, default_header)
 
 # Capture SIGINT for cleanup when the script is aborted
 def end_read(signal,frame):
     global continue_reading
     print("Ctrl+C captured, ending read.")
     GPIO.cleanup()
-    conn.close()
+    db.close()
     continue_reading = False
 
 # Hook the SIGINT
@@ -78,32 +80,18 @@ while continue_reading:
                 username = raw_input('Username: ')
                 password = getpass.getpass('Password: ')
 
-                payload = {"username" : username, "password": password}
-                r = requests.post(backend_address+'/users/authenticate', headers=default_header,  json = payload)
-                json_data = json.loads(r.text)
+                # authenticate user against backend
+                if not ba.authenticate(username, password):
+                    continue
 
-                try:
-                    #Authenticate user
-                    if json_data["result"]["authenticated"] == True:
-                        print("User authenticated!")
+                if not ba.userInGroup(username):
+                    continue
 
-                        #Check if user exists in group
-                        r = requests.get(backend_address+'/group/members/'+username, headers=default_header)
-                        json_data = json.loads(r.text)
-                        
-                        if json_data["result"]["username"] == username:
-                            print("User found from group! Adding card to database!")
-
-                            #Save user to database
-                            db.save_user(username, uid_combined)
-
-                except:
-                    print("Error, user not added to database!")
+                #Save user to database
+                db.save_user(username, uid_combined)
 
             else:
                 #Card found from database, do transaction
                 g.flash(GREEN)
-                payload = {"username":user[1],"amount":default_amount}
-                r = requests.post(backend_address+'/transaction', headers=default_header, json=payload)
-                json_data = json.loads(r.text)
-                print(json_data["result"][0]["username"] + ": " + str(json_data["result"][0]["saldo"]))
+                saldo = ba.doTransaction(user[1], default_amount)
+                print(user[1] + ': ' + str(saldo))
