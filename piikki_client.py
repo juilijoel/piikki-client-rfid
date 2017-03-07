@@ -6,34 +6,29 @@ import getpass
 import os
 import json
 from gadgets import gadgets
+from display import display
 from os.path import expanduser
 from database import database
 from backend_access import backend_access
+from getch import _Getch
 
 # Fetch settings from json file
 with open('config.json') as json_config_file:
     config = json.load(json_config_file)
 
-sqlite_path = os.path.dirname(os.path.abspath(__file__)) + "/piikki.db"
-backend_address = config["backend_address"]
-default_header = config["default_header"]
-default_amount = config["default_amount"]
+# initializations
+# green led 29, red led 32, beeper 36
+getch = _Getch()
+gads = gadgets(29, 32, 36)
+disp = display()
+db = database(os.path.dirname(os.path.abspath(__file__)) + "/piikki.db")
+ba = backend_access(config["backend_address"], config["default_header"])
 
 RED, GREEN = range(2)
 GPIO.setmode(GPIO.BOARD)
 
-# GREEN LED = 29, 
-# RED LED = 32
-# BEEPER = 36
-g = gadgets(29, 32, 36)
-
-continue_reading = True
-
-#initialize database
-db = database(sqlite_path)
-
-#initialize backend access
-ba = backend_access(backend_address, default_header)
+# Create an object of the class MFRC522
+MIFAREReader = MFRC522.MFRC522()
 
 # Capture SIGINT for cleanup when the script is aborted
 def end_read(signal,frame):
@@ -46,8 +41,7 @@ def end_read(signal,frame):
 # Hook the SIGINT
 signal.signal(signal.SIGINT, end_read)
 
-# Create an object of the class MFRC522
-MIFAREReader = MFRC522.MFRC522()
+continue_reading = True
 
 # Welcome message
 print("Welcome to Piikki-client")
@@ -66,7 +60,7 @@ while continue_reading:
 
         # If we have the UID, continue
         if status == MIFAREReader.MI_OK:
-            g.beep()
+            gads.beep()
             # Combine UID
             uid_combined = str(uid[0])+str(uid[1])+str(uid[2])+str(uid[3])
 
@@ -75,23 +69,60 @@ while continue_reading:
 
             if user == None:
                 # No card found from database
-                g.flash(RED)
+                gads.flash(RED)
                 print("Card not recognized. Setting up new card!")
-                username = raw_input('Username: ')
-                password = getpass.getpass('Password: ')
+                username = ""
+                password = ""
+                hidden = ""
+
+                disp.show_message("User: ")
+                ch = getch()
+                while ch != '\r':
+                    try:
+                        if (ch == '\x08' or ch == '\x7f') & len(username) > 0:
+                            username = username[:-1]
+                            disp.backspace()
+                        else:
+                            username += ch
+                            disp.add_str(ch)
+                        ch = getch()
+                    except:
+                        ch = getch()
+
+                disp.indent_line()
+                disp.add_str("\nPass: ")
+
+                ch = getch()
+                while ch != '\r':
+                    try:
+                        if ch == '\x08' or ch == '\x7f' & len(password) > 0:
+                            hidden = hidden[:-1]
+                            password = password[:-1]
+                            disp.backspace()
+                        else:
+                            hidden += "*"
+                            password += ch
+                            disp.add_str('*')
+                        ch = getch()
+                    except:
+                        ch = getch()
 
                 # authenticate user against backend
                 if not ba.authenticate(username, password):
+                    disp.show_temp_message("Auth failed :(")
                     continue
 
                 if not ba.userInGroup(username):
+                    disp.show_temp_message("User not in group :(")
                     continue
 
                 #Save user to database
                 db.save_user(username, uid_combined)
+                disp.show_temp_message("Card saved! :)")
 
             else:
                 #Card found from database, do transaction
-                g.flash(GREEN)
-                saldo = ba.doTransaction(user[1], default_amount)
+                gads.flash(GREEN)
+                saldo = ba.doTransaction(user[1], config["default_amount"])
+                disp.show_saldo(user[1], saldo)
                 print(user[1] + ': ' + str(saldo))

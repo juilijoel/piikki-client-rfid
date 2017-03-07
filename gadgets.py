@@ -8,8 +8,8 @@ beep_time = 0.05
 #Class for gadgets, such as leds and beepers
 
 class gadgets:
-    #raspi pins (BOARD mode)
     def __init__(self, green_led, red_led, beeper):
+        GPIO.setmode(GPIO.BOARD)
         self.green_led = green_led #29
         self.red_led = red_led #32
         self.beeper = beeper #36
