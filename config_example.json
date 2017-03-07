@@ -8,6 +8,8 @@
         "pass" : "PASS:",
         "auth_fail" : "AUTH FAILED",
         "card_saved" : "CARD SAVED",
-        "user_not_found" : "USER NOT FOUND"
+        "user_not_found" : "USER NOT FOUND",
+        "create_user" : "USER CREATED",
+        "user_create_fail" : "USER NOT CREATED"
     }
 }

@@ -18,13 +18,18 @@ class display:
 
     def show_message(self,message):
         self.clear()
-        self.wnpos.write_msg(message)
         i = message.find('\n')
         if i != -1:
             self._row = 2
-            self._col = len(message)
+            self._col = len(message)-i-1
+            self.wnpos.write_msg(message[:i])
+            self.wnpos.poscur(2,1)
+            self.wnpos.write_msg(message[-(len(message)-i-1):])
         else:
             self._col = len(message) + 1
+            self.wnpos.write_msg(message)
+
+
         print(str(self._row) + " " + str(self._col))
 
 

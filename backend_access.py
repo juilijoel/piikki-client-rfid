@@ -44,3 +44,39 @@ class backend_access:
         r = requests.post(self.backend_address+'/transaction', headers=self.default_header, json=payload)
         json_data = json.loads(r.text)
         return json_data["result"][0]["saldo"]
+
+    def createUser(self, username, password):
+        payload = {"username":username,"password":password}
+        r = requests.post(self.backend_address+'/users/create', headers=self.default_header, json=payload)
+        json_data = json.loads(r.text)
+
+        try:                
+            if json_data["result"] == username:
+                print("User created!")
+                return True
+            else:
+                print("User not created!")
+                return False
+        except:
+            print("User not created!")
+            print(json_data)
+            return False
+
+    def addUserToGroup(self, username):
+        payload = {"username":username}
+        r = requests.post(self.backend_address+'/group/addMember', headers=self.default_header, json=payload)
+        json_data = json.loads(r.text)
+
+        try:                
+            if json_data["result"] == username:
+                print("User added to group!")
+                return True
+            else:
+                print("User not added to group!")
+                return False
+        except:
+            print("User not added to group!")
+            print(json_data)
+            return False
+
+    

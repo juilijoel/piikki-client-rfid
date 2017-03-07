@@ -110,9 +110,40 @@ while continue_reading:
                 # authenticate user against backend
                 if not ba.authenticate(username, password):
                     disp.show_temp_message(config["messages"]["auth_fail"])
+                    
+                    # create new user
+                    disp.show_message(config["messages"]["pass"]+" ")
+                    
+                    # ask password again
+                    hidden = ""
+                    passwordcheck = ""
+                    ch = getch()
+                    while ch != '\r':
+                        try:
+                            if ch == '\x08' or ch == '\x7f' and len(password) > 0:
+                                hidden = hidden[:-1]
+                                passwordcheck = passwordcheck[:-1]
+                                disp.backspace()
+                            else:
+                                hidden += "*"
+                                passwordcheck += ch
+                                disp.add_str('*')
+                            ch = getch()
+                        except:
+                            ch = getch()
+
+                    if(password == passwordcheck and ba.createUser(username, password) == True):
+                        ba.addUserToGroup(username)
+                        disp.show_temp_message(config["messages"]["create_user"])
+                        db.save_user(username, uid_combined)
+
+                    else:
+                        disp.show_temp_message(config["messages"]["user_create_fail"])
                     continue
 
                 if not ba.userInGroup(username):
+                    ba.addUserToGroup(username)
+                    db.save_user(username, uid_combined)
                     disp.show_temp_message(config["messages"]["user_not_found"])
                     continue
 
