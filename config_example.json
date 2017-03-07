@@ -1,5 +1,13 @@
 {
     "backend_address":"http://yourhost.com/api/restricted",
     "default_header":{"Authorization": "YourHashedToken"},
-    "default_amount":-1
+    "default_amount":-1,
+    "messages":{
+        "default" : "INSERT CARD",
+        "user" : "USER:",
+        "pass" : "PASS:",
+        "auth_fail" : "AUTH FAILED",
+        "card_saved" : "CARD SAVED",
+        "user_not_found" : "USER NOT FOUND"
+    }
 }

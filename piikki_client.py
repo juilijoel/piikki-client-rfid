@@ -20,7 +20,7 @@ with open('config.json') as json_config_file:
 # green led 29, red led 32, beeper 36
 getch = _Getch()
 gads = gadgets(29, 32, 36)
-disp = display()
+disp = display(config["messages"]["default"])
 db = database(os.path.dirname(os.path.abspath(__file__)) + "/piikki.db")
 ba = backend_access(config["backend_address"], config["default_header"])
 
@@ -72,14 +72,13 @@ while continue_reading:
                 gads.flash(RED)
                 print("Card not recognized. Setting up new card!")
                 username = ""
-                password = ""
                 hidden = ""
 
-                disp.show_message("User: ")
+                disp.show_message(config["messages"]["user"]+" ")
                 ch = getch()
                 while ch != '\r':
                     try:
-                        if (ch == '\x08' or ch == '\x7f') & len(username) > 0:
+                        if (ch == '\x08' or ch == '\x7f') and len(username) > 0:
                             username = username[:-1]
                             disp.backspace()
                         else:
@@ -90,12 +89,13 @@ while continue_reading:
                         ch = getch()
 
                 disp.indent_line()
-                disp.add_str("\nPass: ")
 
+                password = ""
+                disp.add_str("\n"+config["messages"]["pass"]+" ")
                 ch = getch()
                 while ch != '\r':
                     try:
-                        if ch == '\x08' or ch == '\x7f' & len(password) > 0:
+                        if ch == '\x08' or ch == '\x7f' and len(password) > 0:
                             hidden = hidden[:-1]
                             password = password[:-1]
                             disp.backspace()
@@ -109,16 +109,16 @@ while continue_reading:
 
                 # authenticate user against backend
                 if not ba.authenticate(username, password):
-                    disp.show_temp_message("Auth failed :(")
+                    disp.show_temp_message(config["messages"]["auth_fail"])
                     continue
 
                 if not ba.userInGroup(username):
-                    disp.show_temp_message("User not in group :(")
+                    disp.show_temp_message(config["messages"]["user_not_found"])
                     continue
 
                 #Save user to database
                 db.save_user(username, uid_combined)
-                disp.show_temp_message("Card saved! :)")
+                disp.show_temp_message(config["messages"]["card_saved"])
 
             else:
                 #Card found from database, do transaction

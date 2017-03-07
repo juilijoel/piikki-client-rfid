@@ -2,17 +2,13 @@ import vfdpos
 import usb.core
 import time
 
-default_screen_message = "SPINNI"
 default_screen_time = 2.0
 
 class display:
-    def __init__(self):
+    def __init__(self, default_message):
         self.wnpos = vfdpos.vfd_pos(0x0200)
-        self.wnpos.clearscreen()
-        self.wnpos.poscur(1, 1)
-        self.wnpos.write_msg(default_screen_message)
-        self._col = 1
-        self._row = 1
+        self.default_message = default_message
+        self.show_default_message()
 
     def clear(self):
         self.wnpos.clearscreen()
@@ -33,7 +29,7 @@ class display:
 
 
     def show_default_message(self):
-        self.show_message(default_screen_message)
+        self.show_message(self.default_message)
 
     def show_saldo(self, username, saldo):
         self.show_message("Iltaa " + username + "!\r\nSaldo: " + str(saldo))
