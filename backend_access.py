@@ -43,7 +43,7 @@ class backend_access:
         payload = {"username":username,"amount":amount}
         r = requests.post(self.backend_address+'/transaction', headers=self.default_header, json=payload)
         json_data = json.loads(r.text)
-        return json_data["result"][0]["saldo"]
+        return json_data["result"]["saldo"]
 
     def createUser(self, username, password):
         payload = {"username":username,"password":password}
