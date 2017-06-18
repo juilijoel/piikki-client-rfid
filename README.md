@@ -1,5 +1,5 @@
 ## Piikki-Client
-Advance payment system client for www.spinni.org
+Advance payment system client for clubs and small societies
 
 [Piikki-Server](https://github.com/majori/piikki) by [majori](https://github.com/majori)
 
